@@ -8,7 +8,8 @@ client = discord.Client()
 PREFIX = "p."
 command_help = {
     "ping": "`p.ping`\nA simple debug command where I respond with 'pong'",
-    "help": "`p.help`\nList all available commands\n`p.help [command]`\nGet further details on a specific command"
+    "help": "`p.help`\nList all available commands\n`p.help [command]`\nGet further details on a specific command",
+    "palindrome": "`p.palindrome [word]`\nFigure out if a word is spelt the same forwards and backwards"
 }
 command_list = list(command_help.keys())
 
@@ -39,5 +40,15 @@ async def on_message(message):
             # View list of all commands
             else:
                 await message.channel.send("Here are some commands I am capable of:\n`" + "`\n`".join(command_list) + "`")
+        # Palindrome command
+        elif command[:10] == command_list[2]:
+            word = command[10:].strip()
+            if word == word[::-1]:
+                await message.channel.send("This word **is** a palindrome")
+            else:
+                await message.channel.send("This word **is not** a palindrome")
+        #TODO: Add more commands here
+        else:
+            await message.channel.send("Command not found. Try typing `p.help` to see a list of all commands")
 
 client.run(TOKEN)
