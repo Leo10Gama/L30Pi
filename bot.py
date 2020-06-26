@@ -1,6 +1,7 @@
 import os
 import discord
 import piglatin
+import ninsheetmusic as nsm
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -12,7 +13,8 @@ command_help = {
     "help": "`p.help`\nList all available commands\n`p.help [command]`\nGet further details on a specific command",
     "palindrome": "`p.palindrome [word]`\nFigure out if a word is spelt the same forwards and backwards",
     "math": "`p.math [number] [operation] [number]`\nPerform a mathematical operation using either {+, -, *, /, %, \\}",
-    "piglatin": "`p.piglatin [phrase]`\nConvert a phrase or expression into pig latin"
+    "piglatin": "`p.piglatin [phrase]`\nConvert a phrase or expression into pig latin",
+    "ninsheetmusic": "`p.ninsheetmusic series`\nFind video game sheet music based on the game series (default)\n`p.ninsheetmusic console`\nFind video game sheet music based on the console that game was on"
 }
 command_list = list(command_help.keys())
 
@@ -82,6 +84,60 @@ async def on_message(message):
         # Pig latin command
         elif command[:8] == command_list[4]:
             await message.channel.send(piglatin.to_piglatin(command[8:].strip()))
+        # Ninsheetmusic command
+        elif command[:13] == command_list[5]:
+            # Search by console
+            if command[13:].strip().lower() == "console":
+                consoles = nsm.get_console_list()
+                console_list = list(consoles.keys())
+                await message.channel.send("Which console would you like to see the sheets for? (Or type `list` to see all available consoles)")
+                want2exit = False
+                while not want2exit:
+                    console = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
+                    # List consoles to search from
+                    if console.content.lower().strip() == "list":
+                        embed = discord.Embed(title="Consoles")
+                        desc = ""
+                        for c in console_list:
+                            desc += c + "\n"
+                        embed.description = desc
+                        await message.channel.send(embed=embed)
+                        await message.channel.send("Which of these would you like sheets for?")
+                    # A console has been selected
+                    elif console.content.lower().strip() in console_list:
+                        games = nsm.get_sheets_from_page(consoles[console.content.lower().strip()])
+                        embed = discord.Embed(title="Games")
+                        desc = ""
+                        for game in games.keys():
+                            desc += game.lower() + "\n"
+                        embed.description = desc
+                        await message.channel.send(embed=embed)
+                        await message.channel.send("Which game would you like to see sheets from?")
+                        # Figure out which game to see sheets from
+                        game = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
+                        if game.content.lower().strip() in list(i.lower() for i in games.keys()):
+                            songlist = {}
+                            game_title = ""
+                            for i in games.keys():
+                                if game.content.lower().strip() == i.lower():
+                                    songlist = games[i]
+                                    game_title = i
+                                    break
+                            embed = discord.Embed(title=game_title)
+                            for song in songlist:
+                                embed.add_field(name=song["title"], value="Arranged by " + song["arranger"] + "\n" + song["link"], inline=True)
+                            await message.channel.send(embed=embed)
+                            want2exit = True
+                        else:
+                            await message.channel.send("Game not found. Cancelling action")
+                            want2exit = True
+                    # Unknown command
+                    else:
+                        await message.channel.send("Unknown command. Cancelling action")
+                        want2exit = True
+            # Search by series
+            else:
+                pass
         #TODO: Add more commands here
         else:
             await message.channel.send("Command not found. Try typing `p.help` to see a list of all commands")
