@@ -1,5 +1,6 @@
 import os
 import discord
+import piglatin
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,7 +11,8 @@ command_help = {
     "ping": "`p.ping`\nA simple debug command where I respond with 'pong'",
     "help": "`p.help`\nList all available commands\n`p.help [command]`\nGet further details on a specific command",
     "palindrome": "`p.palindrome [word]`\nFigure out if a word is spelt the same forwards and backwards",
-    "math": "`p.math [number] [operation] [number]`\nPerform a mathematical operation using either {+, -, *, /, %, \\}"
+    "math": "`p.math [number] [operation] [number]`\nPerform a mathematical operation using either {+, -, *, /, %, \\}",
+    "piglatin": "`p.piglatin [phrase]`\nConvert a phrase or expression into pig latin"
 }
 command_list = list(command_help.keys())
 
@@ -77,6 +79,9 @@ async def on_message(message):
                     await message.channel.send("Invalid input")
             else:
                 await message.channel.send("Invalid operation")
+        # Pig latin command
+        elif command[:8] == command_list[4]:
+            await message.channel.send(piglatin.to_piglatin(command[8:].strip()))
         #TODO: Add more commands here
         else:
             await message.channel.send("Command not found. Try typing `p.help` to see a list of all commands")
