@@ -14,7 +14,7 @@ command_help = {
     "palindrome": "`p.palindrome [word]`\nFigure out if a word is spelt the same forwards and backwards",
     "math": "`p.math [number] [operation] [number]`\nPerform a mathematical operation using either {+, -, *, /, %, \\}",
     "piglatin": "`p.piglatin [phrase]`\nConvert a phrase or expression into pig latin",
-    "ninsheetmusic": "`p.ninsheetmusic series`\nFind video game sheet music based on the game series (default)\n`p.ninsheetmusic console`\nFind video game sheet music based on the console that game was on"
+    "nsm": "Searches for video game sheet music on the site https://www.ninsheetmusic.org\n`p.nsm series`\nFind video game sheet music based on the game series (default)\n`p.nsm console`\nFind video game sheet music based on the console that game was on"
 }
 command_list = list(command_help.keys())
 
@@ -101,9 +101,12 @@ async def on_message(message):
                         desc = ""
                         for c in console_list:
                             desc += c + "\n"
-                        embed.description = desc
-                        await message.channel.send(embed=embed)
-                        await message.channel.send("Which of these would you like sheets for?")
+                        if len(desc) < 2048:
+                            embed.description = desc
+                            await message.channel.send(embed=embed)
+                            await message.channel.send("Which of these would you like sheets for?")
+                        else:
+                            await message.channel.send("Which game would you like sheets for?")
                     # A console has been selected
                     elif console.content.lower().strip() in console_list:
                         games = nsm.get_sheets_from_page(consoles[console.content.lower().strip()])
@@ -111,9 +114,12 @@ async def on_message(message):
                         desc = ""
                         for game in games.keys():
                             desc += game.lower() + "\n"
-                        embed.description = desc
-                        await message.channel.send(embed=embed)
-                        await message.channel.send("Which game would you like to see sheets from?")
+                        if len(desc) < 2048:
+                            embed.description = desc
+                            await message.channel.send(embed=embed)
+                            await message.channel.send("Which of these would you like sheets for?")
+                        else:
+                            await message.channel.send("Which game would you like sheets for?")
                         # Figure out which game to see sheets from
                         game = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
                         await get_sheets(game.content, games, message.channel)
@@ -136,9 +142,12 @@ async def on_message(message):
                         desc = ""
                         for s in series_list:
                             desc += s + "\n"
-                        embed.description = desc
-                        await message.channel.send(embed=embed)
-                        await message.channel.send("Which of these would you like sheets for?")
+                        if len(desc) < 2048:
+                            embed.description = desc
+                            await message.channel.send(embed=embed)
+                            await message.channel.send("Which of these would you like sheets for?")
+                        else:
+                            await message.channel.send("Which game would you like sheets for?")
                     # A series has been selected
                     elif series.content.lower().strip() in series_list:
                         games = nsm.get_sheets_from_page(serieses[series.content.lower().strip()])
@@ -146,9 +155,12 @@ async def on_message(message):
                         desc = ""
                         for game in games.keys():
                             desc += game.lower() + "\n"
-                        embed.description = desc
-                        await message.channel.send(embed=embed)
-                        await message.channel.send("Which game would you like to see sheets from?")
+                        if len(desc) < 2048:
+                            embed.description = desc
+                            await message.channel.send(embed=embed)
+                            await message.channel.send("Which of these would you like sheets for?")
+                        else:
+                            await message.channel.send("Which game would you like sheets for?")
                         # Figure out which game to see sheets from
                         game = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
                         await get_sheets(game.content, games, message.channel)
