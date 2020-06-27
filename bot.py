@@ -86,6 +86,7 @@ async def on_message(message):
             await message.channel.send(piglatin.to_piglatin(command[8:].strip()))
         # Ninsheetmusic command
         elif command[:13] == command_list[5]:
+            search_page = ""
             # Search by console
             if command[13:].strip().lower() == "console":
                 consoles = nsm.get_console_list()
@@ -115,31 +116,74 @@ async def on_message(message):
                         await message.channel.send("Which game would you like to see sheets from?")
                         # Figure out which game to see sheets from
                         game = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
-                        if game.content.lower().strip() in list(i.lower() for i in games.keys()):
-                            songlist = {}
-                            game_title = ""
-                            for i in games.keys():
-                                if game.content.lower().strip() == i.lower():
-                                    songlist = games[i]
-                                    game_title = i
-                                    break
-                            embed = discord.Embed(title=game_title)
-                            for song in songlist:
-                                embed.add_field(name=song["title"], value="Arranged by " + song["arranger"] + "\n" + song["link"], inline=True)
-                            await message.channel.send(embed=embed)
-                            want2exit = True
-                        else:
-                            await message.channel.send("Game not found. Cancelling action")
-                            want2exit = True
+                        await get_sheets(game.content, games, message.channel)
+                        want2exit = True
                     # Unknown command
                     else:
                         await message.channel.send("Unknown command. Cancelling action")
                         want2exit = True
             # Search by series
             else:
-                pass
+                serieses = nsm.get_series_list()
+                series_list = list(serieses.keys())
+                await message.channel.send("Which series would you like to see the sheets for? (Or type `list` to see all available consoles)")
+                want2exit = False
+                while not want2exit:
+                    series = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
+                    # List series to search from
+                    if series.content.lower().strip() == "list":
+                        embed = discord.Embed(title="Series")
+                        desc = ""
+                        for s in series_list:
+                            desc += s + "\n"
+                        embed.description = desc
+                        await message.channel.send(embed=embed)
+                        await message.channel.send("Which of these would you like sheets for?")
+                    # A series has been selected
+                    elif series.content.lower().strip() in series_list:
+                        games = nsm.get_sheets_from_page(serieses[series.content.lower().strip()])
+                        embed = discord.Embed(title="Games")
+                        desc = ""
+                        for game in games.keys():
+                            desc += game.lower() + "\n"
+                        embed.description = desc
+                        await message.channel.send(embed=embed)
+                        await message.channel.send("Which game would you like to see sheets from?")
+                        # Figure out which game to see sheets from
+                        game = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
+                        await get_sheets(game.content, games, message.channel)
+                        want2exit = True
+                    # Unknown command
+                    else:
+                        await message.channel.send("Unknown command. Cancelling action")
+                        want2exit = True    
         #TODO: Add more commands here
         else:
             await message.channel.send("Command not found. Try typing `p.help` to see a list of all commands")
+
+async def get_sheets(game, games, channel):
+    if game.lower().strip() in list(i.lower() for i in games.keys()):
+        songlist = {}
+        game_title = ""
+        for i in games.keys():
+            if game.lower().strip() == i.lower():
+                songlist = games[i]
+                game_title = i
+                break
+        embed = discord.Embed(title=game_title)
+        char_sum = len(game_title)
+        for song in songlist:
+            embed.add_field(name=song["title"], value="Arranged by " + song["arranger"] + "\n" + song["link"], inline=True)
+            char_sum += len(song["title"]) + len(song["arranger"]) + len(song["link"])
+        # This chunk is to make sure the embed character limit is not exceeded
+        if char_sum <= 6000:
+            await channel.send(embed=embed)
+        else:
+            async with channel.typing():
+                await channel.send("**" + game_title + "**")
+                for song in songlist:
+                    await channel.send(song["title"] + " (Arranged by " + song["arranger"] + "): " + song["link"])
+    else:
+        await channel.send("Game not found. Cancelling action")
 
 client.run(TOKEN)
