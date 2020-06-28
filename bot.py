@@ -2,6 +2,7 @@ import os
 import discord
 import piglatin
 import ninsheetmusic as nsm
+import fibonacci as fib
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,7 +15,8 @@ command_help = {
     "palindrome": "`p.palindrome [word]`\nFigure out if a word is spelt the same forwards and backwards",
     "math": "`p.math [number] [operation] [number]`\nPerform a mathematical operation using either {+, -, *, /, %, \\}",
     "piglatin": "`p.piglatin [phrase]`\nConvert a phrase or expression into pig latin",
-    "nsm": "Searches for video game sheet music on the site https://www.ninsheetmusic.org\n`p.nsm series`\nFind video game sheet music based on the game series (default)\n`p.nsm console`\nFind video game sheet music based on the console that game was on"
+    "nsm": "Searches for video game sheet music on the site https://www.ninsheetmusic.org\n`p.nsm series`\nFind video game sheet music based on the game series (default)\n`p.nsm console`\nFind video game sheet music based on the console that game was on",
+    "fibonacci": "`p.fibonacci [integer]`\nGet a term of the fibonacci sequence"
 }
 command_list = list(command_help.keys())
 
@@ -86,7 +88,6 @@ async def on_message(message):
             await message.channel.send(piglatin.to_piglatin(command[8:].strip()))
         # Ninsheetmusic command
         elif command[:13] == command_list[5]:
-            search_page = ""
             # Search by console
             if command[13:].strip().lower() == "console":
                 consoles = nsm.get_console_list()
@@ -168,7 +169,10 @@ async def on_message(message):
                     # Unknown command
                     else:
                         await message.channel.send("Unknown command. Cancelling action")
-                        want2exit = True    
+                        want2exit = True  
+        # Fibonacci command
+        elif command[:9] == command_list[6]:
+            await message.channel.send(str(fib.get_fib(int(command[9:].strip()))))
         #TODO: Add more commands here
         else:
             await message.channel.send("Command not found. Try typing `p.help` to see a list of all commands")
