@@ -18,7 +18,7 @@ command_help = {
     "piglatin": "`p.piglatin [phrase]`\nConvert a phrase or expression into pig latin",
     "nsm": "Searches for video game sheet music on the site https://www.ninsheetmusic.org\n`p.nsm`\n`p.nsm series`\nFind video game sheet music based on the game series (default)\n`p.nsm console`\nFind video game sheet music based on the console that game was on",
     "fibonacci": "`p.fibonacci [integer]`\nGet a term of the fibonacci sequence",
-    "flag": "A fun game! Guess what country the flag belongs to in 30 seconds (or 3 tries)\n`p.flag`\nStart the game and guess what country the flag is from"
+    "flag": "A fun game! Guess what country the flag belongs to in 30 seconds (or 3 tries)\n`p.flag`\nStart the game with country flags from around the world\n`p.flag america`\nStart the game with flags from the states of USA"
 }
 command_list = list(command_help.keys())
 
@@ -177,8 +177,11 @@ async def on_message(message):
             await message.channel.send(str(fib.get_fib(int(command[9:].strip()))))
         # Flag game command
         elif command[:4] == command_list[7]:
-            my_flag = flag.get_random_flag()
-            await message.channel.send("What country is this flag from?", embed=discord.Embed().set_image(url=my_flag.flag))
+            if command[4:].strip().lower() == "america":
+                my_flag = flag.get_random_flag("american")
+            else:
+                my_flag = flag.get_random_flag()
+            await message.channel.send("Where is this flag from?", embed=discord.Embed().set_image(url=my_flag.flag))
             strikes = 3
             game_in_progress = True
             while game_in_progress:
@@ -187,15 +190,15 @@ async def on_message(message):
                     if msg.content.lower() in [my_flag.name.lower(), my_flag.name.lower().replace("&", "and"), 
                         my_flag.name.lower().replace("and","&"), my_flag.name.lower().replace("the", "").strip(), 
                         my_flag.name.lower().replace("-", "")]:
-                            await message.channel.send("You got it! The country was {}!".format(my_flag.name))
+                            await message.channel.send("You got it! The flag was from {}!".format(my_flag.name))
                             game_in_progress = False
                     else:
                         strikes -= 1
                         if strikes == 0:
-                            await message.channel.send("Game over! The country was {}!".format(my_flag.name))
+                            await message.channel.send("Game over! The flag was from {}!".format(my_flag.name))
                             game_in_progress = False
                 except:
-                    await message.channel.send("Game over! The country was {}!".format(my_flag.name))
+                    await message.channel.send("Game over! The flag was from {}!".format(my_flag.name))
                     game_in_progress = False
         #TODO: Add more commands here
         else:
