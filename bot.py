@@ -18,7 +18,8 @@ command_help = {
     "piglatin": "`p.piglatin [phrase]`\nConvert a phrase or expression into pig latin",
     "nsm": "Searches for video game sheet music on the site https://www.ninsheetmusic.org\n`p.nsm`\n`p.nsm series`\nFind video game sheet music based on the game series (default)\n`p.nsm console`\nFind video game sheet music based on the console that game was on",
     "fibonacci": "`p.fibonacci [integer]`\nGet a term of the fibonacci sequence",
-    "flag": "A fun game! Guess what country the flag belongs to in 30 seconds (or 3 tries)\n`p.flag`\nStart the game with country flags from around the world\n`p.flag america`\nStart the game with flags from the states of USA"
+    "flag": "A fun game! Guess what country the flag belongs to in 30 seconds (or 3 tries)\n`p.flag`\nStart the game with country flags from around the world\n`p.flag america`\nStart the game with flags from the states of USA",
+    "smashu": "`p.smashu [character]`\nSee the hitboxes of a character from Super Smash Bros. Ultimate"
 }
 command_list = list(command_help.keys())
 
@@ -200,6 +201,10 @@ async def on_message(message):
                 except:
                     await message.channel.send("Game over! The flag was from {}!".format(my_flag.name))
                     game_in_progress = False
+        # Smashu command
+        elif command[:6] == command_list[8]:
+            #TODO: The rest of this command lol
+            pass
         #TODO: Add more commands here
         else:
             await message.channel.send("Command not found. Try typing `p.help` to see a list of all commands")
