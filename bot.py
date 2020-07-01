@@ -4,6 +4,7 @@ import piglatin
 import ninsheetmusic as nsm
 import fibonacci as fib
 import flag
+import smashu
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -203,8 +204,82 @@ async def on_message(message):
                     game_in_progress = False
         # Smashu command
         elif command[:6] == command_list[8]:
-            #TODO: The rest of this command lol
-            pass
+            character_moveset = smashu.get_moveset(command[6:].strip())
+            move_names = list(move.name for move in character_moveset)
+            move_types = ["ground", "aerial", "special", "grab"]
+            want2exit = False
+            move_formatting = {
+                "f tilt": "forward tilt",
+                "d tilt": "down tilt",
+                "f smash": "forward smash",
+                "d smash": "down smash",
+                "nair": "neutral air",
+                "fair": "forward air",
+                "bair": "back air",
+                "dair": "down air",
+                "neutral b": [],
+                "side b": [],
+                "up b": [],
+                "down b": [],
+                "back b": []
+            }
+            for move in character_moveset:
+                if "neutral b" in move.name:
+                    move_formatting["neutral b"].append(move.name)
+                elif "side b" in move.name:
+                    move_formatting["side b"].append(move.name)
+                elif "up b" in move.name:
+                    move_formatting["up b"].append(move.name)
+                elif "down b" in move.name:
+                    move_formatting["down b"].append(move.name)
+                elif "back b" in move.name:
+                    move_formatting["back b"].append(move.name)
+            await message.channel.send("What move would you like to see? (or type `ground`, `aerial`, `special`, `grab` to see lists of moves)")
+            while not want2exit:
+                msg = await client.wait_for("message", check=lambda m : m.channel == message.channel and m.author == message.author, timeout=60)
+                msg = msg.content.strip().lower()
+                # List types of moves
+                if msg in move_types:
+                    return_val = []
+                    for move in character_moveset:
+                        if move.move_type == msg:
+                            return_val.append(move.name)
+                    await message.channel.send("`" + "`\n`".join(return_val) + "`\nWhich of these would you like to see?")
+                # Show move
+                elif msg in move_formatting or msg in move_names:
+                    move_name = move_formatting[msg] if msg in move_formatting else msg
+                    for i in character_moveset:
+                        if i.name == move_name:
+                            move = i
+                            break
+                    else:
+                        move = []
+                        for i in character_moveset:
+                            if i.name in list(move_formatting[msg]):
+                                move.append(i)
+                    if type(move) is not list:
+                        move = [move]
+                    for move_part in list(move):
+                        embed = discord.Embed()
+                        # Single-image move
+                        embed.title = move_part.name.title()
+                        for detail in move_part.details:
+                            embed.add_field(name=detail, value=move_part.details[detail])
+                        # Multi-image move
+                        if len(list(move_part.animation)) > 1:
+                            for i in range(0, len(list(move_part.animation)) - 1):
+                                await message.channel.send(embed=discord.Embed().set_image(url=move_part.animation[i]))
+                            else:
+                                await message.channel.send(embed=embed.set_image(url=move_part.animation[len(list(move_part.animation)) - 1]))
+                        else:
+                            if move_part.animation:
+                                await message.channel.send(embed=embed.set_image(url=move_part.animation[0]))
+                            else:
+                                await message.channel.send(embed=embed)
+                    want2exit = True
+                else:
+                    await message.channel.send("Invalid input. Cancelling...")
+                    want2exit = True
         #TODO: Add more commands here
         else:
             await message.channel.send("Command not found. Try typing `p.help` to see a list of all commands")
