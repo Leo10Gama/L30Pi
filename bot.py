@@ -5,6 +5,7 @@ import ninsheetmusic as nsm
 import fibonacci as fib
 import flag
 import smashu
+import trivia
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -177,35 +178,35 @@ async def on_message(message):
         # Fibonacci command
         elif command[:9] == command_list[6]:
             await message.channel.send(str(fib.get_fib(int(command[9:].strip()))))
-        # Flag game command
+        # Trivia game commands
         elif command[:4] == command_list[7]:
-            if command[4:].strip().lower() == "america":
-                my_flag = flag.get_random_flag("american")
-                await message.channel.send("What state is this flag from?", embed=discord.Embed().set_image(url=my_flag.flag))
-            elif command[4:].strip().lower() == "arms":
-                my_flag = flag.get_random_flag("arms")
-                await message.channel.send("What country is this coat of arms from?", embed=discord.Embed().set_image(url="http:" + my_flag.flag))
-            else:
-                my_flag = flag.get_random_flag()
-                await message.channel.send("What country is this flag from?", embed=discord.Embed().set_image(url=my_flag.flag))
+            if command.strip().lower() == "flag america":
+                question = trivia.get_question("flag america")
+                await message.channel.send("What state is this flag from?", embed=discord.Embed().set_image(url=question.image))
+            elif command.strip().lower() == "flag arms":
+                question = trivia.get_question("flag arms")
+                await message.channel.send("What country is this coat of arms from?", embed=discord.Embed().set_image(url="http:" + question.image))
+            elif command.strip().lower() == "flag":
+                question = trivia.get_question("flag")
+                await message.channel.send("What country is this flag from?", embed=discord.Embed().set_image(url=question.image))
             strikes = 3
             game_in_progress = True
             while game_in_progress:
                 try:
                     msg = await client.wait_for("message", check=lambda m : m.channel == message.channel, timeout=30)
-                    if msg.content.lower() in [my_flag.name.lower(), my_flag.name.lower().replace("&", "and"), 
-                        my_flag.name.lower().replace("and","&"), my_flag.name.lower().replace("the", "").strip(), 
-                        my_flag.name.lower().replace("-", ""), my_flag.name.lower().replace("ã", "a").replace("é", "e").replace("í", "i"),
-                        my_flag.name.lower().replace("ã", "a").replace("é", "e").replace("í", "i").replace("and", "&")]:
-                            await message.channel.send("You got it! The answer was {}!".format(my_flag.name))
+                    if msg.content.lower() in [question.name.lower(), question.name.lower().replace("&", "and"), 
+                        question.name.lower().replace("and","&"), question.name.lower().replace("the", "").strip(), 
+                        question.name.lower().replace("-", ""), question.name.lower().replace("ã", "a").replace("é", "e").replace("í", "i"),
+                        question.name.lower().replace("ã", "a").replace("é", "e").replace("í", "i").replace("and", "&")]:
+                            await message.channel.send("You got it! The answer was {}!".format(question.name))
                             game_in_progress = False
                     else:
                         strikes -= 1
                         if strikes == 0:
-                            await message.channel.send("Game over! The answer was {}!".format(my_flag.name))
+                            await message.channel.send("Game over! The answer was {}!".format(question.name))
                             game_in_progress = False
                 except:
-                    await message.channel.send("Game over! The answer was {}!".format(my_flag.name))
+                    await message.channel.send("Game over! The answer was {}!".format(question.name))
                     game_in_progress = False
         # Smashu command
         elif command[:6] == command_list[8]:
