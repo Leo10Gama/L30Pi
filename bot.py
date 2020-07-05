@@ -20,7 +20,7 @@ command_help = {
     "piglatin": "`p.piglatin [phrase]`\nConvert a phrase or expression into pig latin",
     "nsm": "Searches for video game sheet music on the site https://www.ninsheetmusic.org\n`p.nsm`\n`p.nsm series`\nFind video game sheet music based on the game series (default)\n`p.nsm console`\nFind video game sheet music based on the console that game was on",
     "fibonacci": "`p.fibonacci [integer]`\nGet a term of the fibonacci sequence",
-    "flag": "A fun game! Guess what country the flag belongs to in 30 seconds (or 3 tries)\n`p.flag`\nStart the game with country flags from around the world\n`p.flag america`\nStart the game with flags from the states of USA\n`p.flag arms`\nStart the game with country's coats of arms instead of flags",
+    "flag": "A fun game! Guess what country the flag belongs to in 30 seconds (or 3 tries)\n`p.flag`\nStart the game with country flags from around the world\n`p.flag america`\nStart the game with flags from the states of USA\n`p.flag canada`\nStart the game with flags of the provinces and territories of Canada\n`p.flag arms`\nStart the game with country's coats of arms instead of flags",
     "smashu": "`p.smashu [character]`\nSee the hitboxes of a character from Super Smash Bros. Ultimate"
 }
 command_list = list(command_help.keys())
@@ -186,6 +186,9 @@ async def on_message(message):
             elif command.strip().lower() == "flag arms":
                 question = trivia.get_question("flag arms")
                 await message.channel.send("What country is this coat of arms from?", embed=discord.Embed().set_image(url="http:" + question.image))
+            elif command.strip().lower() == "flag canada":
+                question = trivia.get_question("flag canada")
+                await message.channel.send("What province/territory is this flag from?", embed=discord.Embed().set_image(url=question.image))
             elif command.strip().lower() == "flag":
                 question = trivia.get_question("flag")
                 await message.channel.send("What country is this flag from?", embed=discord.Embed().set_image(url=question.image))
@@ -193,7 +196,7 @@ async def on_message(message):
             game_in_progress = True
             while game_in_progress:
                 try:
-                    msg = await client.wait_for("message", check=lambda m : m.channel == message.channel, timeout=30)
+                    msg = await client.wait_for("message", check=lambda m : m.channel == message.channel and m.author != client.user, timeout=30)
                     if msg.content.lower() in [question.name.lower(), question.name.lower().replace("&", "and"), 
                         question.name.lower().replace("and","&"), question.name.lower().replace("the", "").strip(), 
                         question.name.lower().replace("-", ""), question.name.lower().replace("ã", "a").replace("é", "e").replace("í", "i"),
