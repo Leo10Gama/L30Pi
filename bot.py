@@ -21,7 +21,8 @@ command_help = {
     "nsm": "Searches for video game sheet music on the site https://www.ninsheetmusic.org\n`p.nsm`\n`p.nsm series`\nFind video game sheet music based on the game series (default)\n`p.nsm console`\nFind video game sheet music based on the console that game was on",
     "fibonacci": "`p.fibonacci [integer]`\nGet a term of the fibonacci sequence",
     "flag": "A fun game! Guess what country the flag belongs to in 30 seconds (or 3 tries)\n`p.flag`\nStart the game with country flags from around the world\n`p.flag america`\nStart the game with flags from the states of USA\n`p.flag canada`\nStart the game with flags of the provinces and territories of Canada\n`p.flag arms`\nStart the game with country's coats of arms instead of flags",
-    "smashu": "`p.smashu [character]`\nSee the hitboxes of a character from Super Smash Bros. Ultimate"
+    "smashu": "`p.smashu [character]`\nSee the hitboxes of a character from Super Smash Bros. Ultimate",
+    "percent": "`p.percent [number]/[number]`\nGet the percentage of a given fraction"
 }
 command_list = list(command_help.keys())
 
@@ -289,6 +290,14 @@ async def on_message(message):
                 else:
                     await message.channel.send("Invalid input. Cancelling...")
                     want2exit = True
+        # Percent command
+        elif command[:7] == command_list[9]:
+            try:
+                numbers = command[7:].strip().split("/")
+                percentage = float(numbers[0]) / float(numbers[1]) * 100
+                await message.channel.send("{}%".format(percentage))
+            except:
+                await message.channel.send("Invalid input")
         #TODO: Add more commands here
         else:
             await message.channel.send("Command not found. Try typing `p.help` to see a list of all commands")

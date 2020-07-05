@@ -1,6 +1,10 @@
 import flag
 import random
 
+class Question:
+    def __init__(self, question, answer):
+        self.question, self.answer = question, answer
+
 # The item being returned should always be an object with properties 'name' and 'image'
 def get_question(question_type):
     collection = []
