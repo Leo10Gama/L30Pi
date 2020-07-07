@@ -6,6 +6,7 @@ import fibonacci as fib
 import flag
 import smashu
 import trivia
+import coin as numista
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,7 +23,8 @@ command_help = {
     "fibonacci": "`p.fibonacci [integer]`\nGet a term of the fibonacci sequence",
     "flag": "A fun game! Guess what country the flag belongs to in 30 seconds (or 3 tries)\n`p.flag`\nStart the game with country flags from around the world\n`p.flag america`\nStart the game with flags from the states of USA\n`p.flag canada`\nStart the game with flags of the provinces and territories of Canada\n`p.flag arms`\nStart the game with country's coats of arms instead of flags",
     "smashu": "`p.smashu [character]`\nSee the hitboxes of a character from Super Smash Bros. Ultimate",
-    "percent": "`p.percent [number]/[number]`\nGet the percentage of a given fraction"
+    "percent": "`p.percent [number]/[number]`\nGet the percentage of a given fraction",
+    "coin": "`p.coin`\nSearch for a coin based on its country, face value, year, and description"
 }
 command_list = list(command_help.keys())
 
@@ -298,6 +300,47 @@ async def on_message(message):
                 await message.channel.send("{}%".format(percentage))
             except:
                 await message.channel.send("Invalid input")
+        # Coin command
+        elif command[:4] == command_list[10]:
+            search_topics = ["country", "year", "face value", "any additional search terms"]
+            search_items = []
+            for search_item in search_topics:
+                await message.channel.send("Enter {} (or type `-`)".format(search_item))
+                msg = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
+                msg = msg.content
+                if msg is None:
+                    await message.channel.send("Timeout reached. Cancelling request...")
+                    break
+                elif msg == "-":
+                    search_items.append("")
+                else:
+                    search_items.append(msg.strip())
+            else:
+                coin = None
+                coin_or_coins = numista.get_coins(search_items[0], search_items[1], search_items[2], search_items[3])
+                if type(coin_or_coins) == list:
+                    coins = coin_or_coins
+                    message_to_send = ""
+                    for i in range(0, len(coins)):
+                        message_to_send += "`<{}> {}`\n".format(i, coins[i]["name"])
+                    await message.channel.send(message_to_send + "Enter the number of the coin you'd like to see")
+                    msg = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
+                    msg = msg.content
+                    if msg is None:
+                        await message.channel.send("Timeout reached. Cancelling request...")
+                    elif msg in range(0, len(coins)):
+                        coin = numista.get_coin_by_link(coins[int(msg.strip())]["link"])
+                    else:
+                        await message.channel.send("Invalid range. Cancelling request...")
+                elif coin_or_coins == False:
+                    await message.channel.send("No coins found. Maybe you were *toooo* specific?")
+                else:
+                    coin = coin_or_coins
+            if coin:
+                embed = discord.Embed(title=coin.name, url=coin.link).set_image(url=coin.reverse).set_thumbnail(url=coin.obverse)
+                for coin_property in coin.properties.keys():
+                    embed.add_field(name=coin_property, value=coin.properties[coin_property])
+                await message.channel.send(embed=embed)
         #TODO: Add more commands here
         else:
             await message.channel.send("Command not found. Try typing `p.help` to see a list of all commands")
