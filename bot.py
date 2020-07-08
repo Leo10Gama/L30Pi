@@ -24,7 +24,7 @@ command_help = {
     "flag": "A fun game! Guess what country the flag belongs to in 30 seconds (or 3 tries)\n`p.flag`\nStart the game with country flags from around the world\n`p.flag america`\nStart the game with flags from the states of USA\n`p.flag canada`\nStart the game with flags of the provinces and territories of Canada\n`p.flag arms`\nStart the game with country's coats of arms instead of flags",
     "smashu": "`p.smashu [character]`\nSee the hitboxes of a character from Super Smash Bros. Ultimate",
     "percent": "`p.percent [number]/[number]`\nGet the percentage of a given fraction",
-    "coin": "`p.coin`\nSearch for a coin based on its country, face value, year, and description\n`p.coin random`\nFind and display a random coin (note: may sometimes fail if I find a bad link, apologies in advance)"
+    "coin": "`p.coin`\nSearch for a coin based on its country, face value, year, and description\n`p.coin random`\nFind and display a random coin (note: may sometimes fail if I find a bad link, apologies in advance)\n`p.coin random [country]`\nFind and display a randomm coin from a certain country"
 }
 command_list = list(command_help.keys())
 
@@ -54,7 +54,7 @@ async def on_message(message):
                 await message.channel.send(command_help[command])
             # View list of all commands
             else:
-                await message.channel.send("Here are some commands I am capable of:\n`" + "`\n`".join(command_list) + "`")
+                await message.channel.send("Here are some commands I am capable of:\n`" + "`\n`".join(command_list) + "`\nIf you'd like more information about a given command, just type `p.help [command]`")
         # Palindrome command
         elif command[:10] == command_list[2]:
             word = command[10:].strip()
@@ -331,9 +331,12 @@ async def on_message(message):
                 for coin_property in coin.properties.keys():
                     embed.add_field(name=coin_property, value=coin.properties[coin_property])
                 return embed
-            if command[4:].strip() == "random":
+            if "random" in command:
                 try:
-                    await message.channel.send(embed=make_coin_embed(numista.get_random_coin()))
+                    if command[12:].strip() == "":
+                        await message.channel.send(embed=make_coin_embed(numista.get_random_coin()))
+                    else:
+                        await message.channel.send(embed=make_coin_embed(numista.get_random_coin(command[12:].strip())))
                 except:
                     await message.channel.send("Hmm... pulled a bad link. Try again?")
             else:
