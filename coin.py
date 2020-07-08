@@ -1,5 +1,7 @@
 import requests
 from bs4 import BeautifulSoup as bs
+import re
+import random
 
 MAIN_SITE = "http://en.numista.com"
 SEARCH_SITE = "http://en.numista.com/catalogue/index.php?mode=avance"
@@ -123,3 +125,8 @@ def get_coin_by_link(link):
         if not tr.find("th").text == "References":
             coin_properties[tr.find("th").text] = ' '.join(tr.find("td").text.replace("\n","").replace("&nbsp"," ").split())
     return Coin(coin_name, coin_obv, coin_rev, coin_properties, link)
+
+def get_random_coin():
+    total_coins = int(re.search(r'\d* coins', 
+        bs(requests.get(MAIN_SITE + "/catalogue/pays.php?ct=coin").content, 'html.parser').find("p", class_="intro").text.replace(",","")).group()[:-6])
+    return get_coin_by_link(MAIN_SITE + "/catalogue/pieces{}.html".format(random.randrange(0,total_coins)))

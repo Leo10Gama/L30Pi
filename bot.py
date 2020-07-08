@@ -24,7 +24,7 @@ command_help = {
     "flag": "A fun game! Guess what country the flag belongs to in 30 seconds (or 3 tries)\n`p.flag`\nStart the game with country flags from around the world\n`p.flag america`\nStart the game with flags from the states of USA\n`p.flag canada`\nStart the game with flags of the provinces and territories of Canada\n`p.flag arms`\nStart the game with country's coats of arms instead of flags",
     "smashu": "`p.smashu [character]`\nSee the hitboxes of a character from Super Smash Bros. Ultimate",
     "percent": "`p.percent [number]/[number]`\nGet the percentage of a given fraction",
-    "coin": "`p.coin`\nSearch for a coin based on its country, face value, year, and description"
+    "coin": "`p.coin`\nSearch for a coin based on its country, face value, year, and description\n`p.coin random`\nFind and display a random coin (note: may sometimes fail if I find a bad link, apologies in advance)"
 }
 command_list = list(command_help.keys())
 
@@ -96,6 +96,30 @@ async def on_message(message):
             await message.channel.send(piglatin.to_piglatin(command[8:].strip()))
         # Ninsheetmusic command
         elif command[:13] == command_list[5]:
+            async def get_sheets(game, games, channel):
+                if game.lower().strip() in list(i.lower() for i in games.keys()):
+                    songlist = {}
+                    game_title = ""
+                    for i in games.keys():
+                        if game.lower().strip() == i.lower():
+                            songlist = games[i]
+                            game_title = i
+                            break
+                    embed = discord.Embed(title=game_title)
+                    char_sum = len(game_title)
+                    for song in songlist:
+                        embed.add_field(name=song["title"], value="Arranged by " + song["arranger"] + "\n" + song["link"], inline=True)
+                        char_sum += len(song["title"]) + len(song["arranger"]) + len(song["link"])
+                    # This chunk is to make sure the embed character limit is not exceeded
+                    if char_sum <= 6000:
+                        await channel.send(embed=embed)
+                    else:
+                        async with channel.typing():
+                            await channel.send("**" + game_title + "**")
+                            for song in songlist:
+                                await channel.send(song["title"] + " (Arranged by " + song["arranger"] + "): " + song["link"])
+                else:
+                    await channel.send("Game not found. Cancelling action")
             # Search by console
             if command[13:].strip().lower() == "console":
                 consoles = nsm.get_console_list()
@@ -302,72 +326,55 @@ async def on_message(message):
                 await message.channel.send("Invalid input")
         # Coin command
         elif command[:4] == command_list[10]:
-            search_topics = ["country", "year", "face value", "any additional search terms"]
-            search_items = []
-            for search_item in search_topics:
-                await message.channel.send("Enter {} (or type `-`)".format(search_item))
-                msg = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
-                msg = msg.content
-                if msg is None:
-                    await message.channel.send("Timeout reached. Cancelling request...")
-                    break
-                elif msg == "-":
-                    search_items.append("")
-                else:
-                    search_items.append(msg.strip())
+            def make_coin_embed(coin):
+                embed = discord.Embed(title=coin.name, url=coin.link).set_image(url=coin.reverse).set_thumbnail(url=coin.obverse)
+                for coin_property in coin.properties.keys():
+                    embed.add_field(name=coin_property, value=coin.properties[coin_property])
+                return embed
+            if command[4:].strip() == "random":
+                try:
+                    await message.channel.send(embed=make_coin_embed(numista.get_random_coin()))
+                except:
+                    await message.channel.send("Hmm... pulled a bad link. Try again?")
             else:
-                coin = None
-                coin_or_coins = numista.get_coins(search_items[0], search_items[1], search_items[2], search_items[3])
-                if type(coin_or_coins) == list:
-                    coins = coin_or_coins
-                    message_to_send = ""
-                    for i in range(0, len(coins)):
-                        message_to_send += "`<{}> {}`\n".format(i, coins[i]["name"])
-                    await message.channel.send(message_to_send + "Enter the number of the coin you'd like to see")
+                search_topics = ["country", "year", "face value", "any additional search terms"]
+                search_items = []
+                for search_item in search_topics:
+                    await message.channel.send("Enter {} (or type `-`)".format(search_item))
                     msg = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
                     msg = msg.content
                     if msg is None:
                         await message.channel.send("Timeout reached. Cancelling request...")
-                    elif msg in range(0, len(coins)):
-                        coin = numista.get_coin_by_link(coins[int(msg.strip())]["link"])
+                        break
+                    elif msg == "-":
+                        search_items.append("")
                     else:
-                        await message.channel.send("Invalid range. Cancelling request...")
-                elif coin_or_coins == False:
-                    await message.channel.send("No coins found. Maybe you were *toooo* specific?")
+                        search_items.append(msg.strip())
                 else:
-                    coin = coin_or_coins
-            if coin:
-                embed = discord.Embed(title=coin.name, url=coin.link).set_image(url=coin.reverse).set_thumbnail(url=coin.obverse)
-                for coin_property in coin.properties.keys():
-                    embed.add_field(name=coin_property, value=coin.properties[coin_property])
-                await message.channel.send(embed=embed)
+                    coin = None
+                    coin_or_coins = numista.get_coins(search_items[0], search_items[1], search_items[2], search_items[3])
+                    if type(coin_or_coins) == list:
+                        coins = coin_or_coins
+                        message_to_send = ""
+                        for i in range(0, len(coins)):
+                            message_to_send += "`<{}> {}`\n".format(i, coins[i]["name"])
+                        await message.channel.send(message_to_send + "Enter the number of the coin you'd like to see")
+                        msg = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
+                        msg = msg.content
+                        if msg is None:
+                            await message.channel.send("Timeout reached. Cancelling request...")
+                        elif msg in map(lambda x: str(x), range(0, len(coins))):
+                            coin = numista.get_coin_by_link(coins[int(msg.strip())]["link"])
+                        else:
+                            await message.channel.send("Invalid range. Cancelling request...")
+                    elif coin_or_coins == False:
+                        await message.channel.send("No coins found. Maybe you were *toooo* specific?")
+                    else:
+                        coin = coin_or_coins
+                if coin:
+                    await message.channel.send(embed=make_coin_embed(coin))
         #TODO: Add more commands here
         else:
             await message.channel.send("Command not found. Try typing `p.help` to see a list of all commands")
-
-async def get_sheets(game, games, channel):
-    if game.lower().strip() in list(i.lower() for i in games.keys()):
-        songlist = {}
-        game_title = ""
-        for i in games.keys():
-            if game.lower().strip() == i.lower():
-                songlist = games[i]
-                game_title = i
-                break
-        embed = discord.Embed(title=game_title)
-        char_sum = len(game_title)
-        for song in songlist:
-            embed.add_field(name=song["title"], value="Arranged by " + song["arranger"] + "\n" + song["link"], inline=True)
-            char_sum += len(song["title"]) + len(song["arranger"]) + len(song["link"])
-        # This chunk is to make sure the embed character limit is not exceeded
-        if char_sum <= 6000:
-            await channel.send(embed=embed)
-        else:
-            async with channel.typing():
-                await channel.send("**" + game_title + "**")
-                for song in songlist:
-                    await channel.send(song["title"] + " (Arranged by " + song["arranger"] + "): " + song["link"])
-    else:
-        await channel.send("Game not found. Cancelling action")
 
 client.run(TOKEN)
