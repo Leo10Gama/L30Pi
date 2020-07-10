@@ -24,7 +24,7 @@ command_help = {
     "flag": "A fun game! Guess what country the flag belongs to in 30 seconds (or 3 tries)\n`p.flag`\nStart the game with country flags from around the world\n`p.flag america`\nStart the game with flags from the states of USA\n`p.flag canada`\nStart the game with flags of the provinces and territories of Canada\n`p.flag arms`\nStart the game with country's coats of arms instead of flags",
     "smashu": "`p.smashu [character]`\nSee the hitboxes of a character from Super Smash Bros. Ultimate",
     "percent": "`p.percent [number]/[number]`\nGet the percentage of a given fraction",
-    "coin": "`p.coin`\nSearch for a coin based on its country, face value, year, and description\n`p.coin random`\nFind and display a random coin (note: may sometimes fail if I find a bad link, apologies in advance)\n`p.coin random [country]`\nFind and display a randomm coin from a certain country"
+    "coin": "`p.coin`\nSearch for a coin based on its country, face value, year, and description\n`p.coin random (modifier)`\nFind and display a random coin (note: may sometimes fail if I find a bad link, apologies in advance)\nNote that modifiers include countries or years"
 }
 command_list = list(command_help.keys())
 

@@ -126,15 +126,22 @@ def get_coin_by_link(link):
             coin_properties[tr.find("th").text] = ' '.join(tr.find("td").text.replace("\n","").replace("&nbsp"," ").split())
     return Coin(coin_name, coin_obv, coin_rev, coin_properties, link)
 
-def get_random_coin(country=""):
-    if not country:
+def get_random_coin(modifier=""):
+    if not modifier:
         total_coins = int(re.search(r'\d* coins', 
             bs(requests.get(MAIN_SITE + "/catalogue/pays.php?ct=coin").content, 'html.parser').find("p", class_="intro").text.replace(",","")).group()[:-6])
         return get_coin_by_link(MAIN_SITE + "/catalogue/pieces{}.html".format(random.randrange(0,total_coins)))
-    else:
-        total_pages = int(bs(requests.get(MAIN_SITE + "/catalogue/{}-1.html".format(map_country(country))).content, 'html.parser')
+    elif modifier.isnumeric():
+        total_pages = int(bs(requests.get(SEARCH_SITE + "&a={}".format(modifier)).content, 'html.parser')
             .find("div", class_="catalogue_navigation").find_all("a")[-2].text)
-        link = MAIN_SITE + "/catalogue/{}-{}.html".format(map_country(country), random.randrange(1,total_pages))
+        link = SEARCH_SITE + "&p={}&a={}".format(random.randrange(1,total_pages), modifier)
+        list_of_coins = bs(requests.get(link).content, 'html.parser').find_all("div", class_="resultat_recherche")
+        coin = list_of_coins[random.randrange(0,len(list_of_coins))].find("a")["href"]
+        return get_coin_by_link(MAIN_SITE + coin)
+    else:
+        total_pages = int(bs(requests.get(MAIN_SITE + "/catalogue/{}-1.html".format(map_country(modifier))).content, 'html.parser')
+            .find("div", class_="catalogue_navigation").find_all("a")[-2].text)
+        link = MAIN_SITE + "/catalogue/{}-{}.html".format(map_country(modifier), random.randrange(1,total_pages))
         list_of_coins = bs(requests.get(link).content, 'html.parser').find_all("div", class_="resultat_recherche")
         coin = list_of_coins[random.randrange(0,len(list_of_coins))].find("a")["href"]
         return get_coin_by_link(MAIN_SITE + coin)
