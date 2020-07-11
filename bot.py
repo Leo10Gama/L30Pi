@@ -7,6 +7,7 @@ import flag
 import smashu
 import trivia
 import coin as numista
+import cat
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -24,7 +25,8 @@ command_help = {
     "flag": "A fun game! Guess what country the flag belongs to in 30 seconds (or 3 tries)\n`p.flag`\nStart the game with country flags from around the world\n`p.flag america`\nStart the game with flags from the states of USA\n`p.flag canada`\nStart the game with flags of the provinces and territories of Canada\n`p.flag arms`\nStart the game with country's coats of arms instead of flags",
     "smashu": "`p.smashu [character]`\nSee the hitboxes of a character from Super Smash Bros. Ultimate",
     "percent": "`p.percent [number]/[number]`\nGet the percentage of a given fraction",
-    "coin": "`p.coin`\nSearch for a coin based on its country, face value, year, and description\n`p.coin random (modifier)`\nFind and display a random coin (note: may sometimes fail if I find a bad link, apologies in advance)\nNote that modifiers include countries or years"
+    "coin": "`p.coin`\nSearch for a coin based on its country, face value, year, and description\n`p.coin random (modifier)`\nFind and display a random coin (note: may sometimes fail if I find a bad link, apologies in advance)\nNote that modifiers include countries or years",
+    "cat": "`p.cat`\nShow a picture of a cat!\n`p.cat list`\nShow a list of cats you can see\n`p.cat [cat name]`\nShow one of the cats in the list"
 }
 command_list = list(command_help.keys())
 
@@ -376,6 +378,13 @@ async def on_message(message):
                         coin = coin_or_coins
                 if coin:
                     await message.channel.send(embed=make_coin_embed(coin))
+        # Cat command
+        elif command[:3] == command_list[11]:
+            if command[3:].strip() == "list":
+                await message.channel.send("Here's the list of cats available to see:\n`{}`".format("`\n`".join(cat.list_cats())))  
+            else:
+                my_cat = cat.get_cat_image(command[3:].strip())
+                await message.channel.send("Presenting... {}!".format(my_cat[0]), file=discord.File(my_cat[1], filename=my_cat[1]))
         #TODO: Add more commands here
         else:
             await message.channel.send("Command not found. Try typing `p.help` to see a list of all commands")
