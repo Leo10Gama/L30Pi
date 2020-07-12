@@ -4,7 +4,7 @@ class Cat:
     def __init__(self, name, num_of_pics):
         self.name, self.num_of_pics = name, num_of_pics
 
-CATS = {"ollie": Cat("ollie", 23), 
+CATS = {"ollie": Cat("ollie", 24), 
     "mushu": Cat("mushu", 8), 
     "achilles": Cat("achilles", 5), 
     "luna": Cat("luna", 8),
