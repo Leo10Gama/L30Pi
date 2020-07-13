@@ -8,6 +8,7 @@ import smashu
 import trivia
 import coin as numista
 import cat
+import vgmost as khi
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -26,7 +27,8 @@ command_help = {
     "smashu": "`p.smashu [character]`\nSee the hitboxes of a character from Super Smash Bros. Ultimate",
     "percent": "`p.percent [number]/[number]`\nGet the percentage of a given fraction",
     "coin": "`p.coin`\nSearch for a coin based on its country, face value, year, and description\n`p.coin random (modifier)`\nFind and display a random coin (note: may sometimes fail if I find a bad link, apologies in advance)\nNote that modifiers include countries or years",
-    "cat": "`p.cat`\nShow a picture of a cat!\n`p.cat list`\nShow a list of cats you can see\n`p.cat [cat name]`\nShow one of the cats in the list"
+    "cat": "`p.cat`\nShow a picture of a cat!\n`p.cat list`\nShow a list of cats you can see\n`p.cat [cat name]`\nShow one of the cats in the list",
+    "soundtrack": "`p.soundtrack [game]`\nRetrieve the soundtrack of a given video game"
 }
 command_list = list(command_help.keys())
 
@@ -385,6 +387,23 @@ async def on_message(message):
             else:
                 my_cat = cat.get_cat_image(command[3:].strip())
                 await message.channel.send("Presenting... {}!".format(my_cat[0]), file=discord.File(my_cat[1], filename=my_cat[1]))
+        # Soundtrack command
+        elif command[:10] == command_list[12]:
+            search_term = command[10:].strip()
+            message_to_send = ""
+            albums = khi.search_albums(search_term)
+            for i in range(0, len(albums)):
+                message_to_send = message_to_send + "`<{}> {}`\n".format(i, albums[i]["title"])
+            await message.channel.send(message_to_send + "Enter the number of the album you'd like to see")
+            msg = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
+            msg = msg.content
+            if msg is None:
+                await message.channel.send("Timeout reached. Cancelling request...")
+            elif msg in map(lambda x: str(x), range(0, len(albums))):
+                album = khi.get_album_by_link(albums[int(msg)]["link"])
+                await message.channel.send(album)
+            else:
+                await message.channel.send("Invalid range. Cancelling request...")
         #TODO: Add more commands here
         else:
             await message.channel.send("Command not found. Try typing `p.help` to see a list of all commands")
