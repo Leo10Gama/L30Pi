@@ -401,7 +401,24 @@ async def on_message(message):
                 await message.channel.send("Timeout reached. Cancelling request...")
             elif msg in map(lambda x: str(x), range(0, len(albums))):
                 album = khi.get_album_by_link(albums[int(msg)]["link"])
-                await message.channel.send(album)
+                embeds = []
+                async with message.channel.typing():
+                    for disk in album.songlist:
+                        new_embed = discord.Embed(title=album.title + " (Disk {})".format(str(disk[0].disk_number)), url=album.link)
+                        try: new_embed.set_thumbnail(url=album.art)
+                        except: pass
+                        for i in range(0, len(disk)):
+                            if i % 25 == 0 and i != 0:
+                                embeds.append(new_embed)
+                                new_embed = discord.Embed(title=album.title + " (Disk {})".format(str(disk[0].disk_number)), url=album.link)
+                                try: new_embed.set_thumbnail(url=album.art)
+                                except: pass
+                            new_embed.add_field(name=str(disk[i].track_number) + " - " + disk[i].title, value=disk[i].link)
+                        else:
+                            embeds.append(new_embed)
+                    else:
+                        for embed in embeds:
+                            await message.channel.send(embed=embed)
             else:
                 await message.channel.send("Invalid range. Cancelling request...")
         #TODO: Add more commands here
