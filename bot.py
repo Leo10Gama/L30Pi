@@ -402,23 +402,39 @@ async def on_message(message):
             elif msg in map(lambda x: str(x), range(0, len(albums))):
                 album = khi.get_album_by_link(albums[int(msg)]["link"])
                 embeds = []
-                async with message.channel.typing():
-                    for disk in album.songlist:
-                        new_embed = discord.Embed(title=album.title + " (Disk {})".format(str(disk[0].disk_number)), url=album.link)
-                        try: new_embed.set_thumbnail(url=album.art)
+                total_songs = 0
+                async def send_album(_album):
+                    for disk in _album.songlist:
+                        new_embed = discord.Embed(title=_album.title + " (Disk {})".format(str(disk[0].disk_number)), url=_album.link)
+                        try: new_embed.set_thumbnail(url=_album.art)
                         except: pass
                         for i in range(0, len(disk)):
                             if i % 25 == 0 and i != 0:
                                 embeds.append(new_embed)
-                                new_embed = discord.Embed(title=album.title + " (Disk {})".format(str(disk[0].disk_number)), url=album.link)
-                                try: new_embed.set_thumbnail(url=album.art)
+                                new_embed = discord.Embed(title=_album.title + " (Disk {})".format(str(disk[0].disk_number)), url=_album.link)
+                                try: new_embed.set_thumbnail(url=_album.art)
                                 except: pass
                             new_embed.add_field(name=str(disk[i].track_number) + " - " + disk[i].title, value=disk[i].link)
                         else:
                             embeds.append(new_embed)
-                    else:
+                    return embeds
+                for disk in album.songlist:
+                    total_songs += len(disk)
+                if total_songs > 50:
+                    await message.channel.send("There's a lot of songs in this album, are you sure you want me to list them all? (Otherwise I'll just get you the main link)")
+                    response = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
+                    if response.content.lower().strip() in ["yes", "y", "ye"]:
+                        embeds = await send_album(album)
                         for embed in embeds:
                             await message.channel.send(embed=embed)
+                    else:
+                        try: embed = discord.Embed(title=album.title, url=album.link).set_thumbnail(url=album.art)
+                        except: embed = discord.Embed(title=album.title, url=album.link)
+                        await message.channel.send(embed=embed)
+                else:
+                    embeds = await send_album(album)
+                    for embed in embeds:
+                        await message.channel.send(embed=embed)
             else:
                 await message.channel.send("Invalid range. Cancelling request...")
         #TODO: Add more commands here
