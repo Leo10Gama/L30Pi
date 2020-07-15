@@ -3,18 +3,9 @@ from bs4 import BeautifulSoup as bs
 
 MAIN_LINK = "https://www.ninsheetmusic.org/browse"
 
-# Compile the list of available game series in a dictionary with the respective link
-def get_series_list():
-    lists = bs(requests.get(MAIN_LINK + "/series").content, 'html.parser').find_all("ul", class_="browseCategoryList-subList")
-    return_value = {}
-    for ul_tag in lists:
-        for list_item in ul_tag.find_all("li"):
-            return_value[list_item.get_text().lower().replace("é","e")] = list_item.find("a")["href"]
-    return return_value
-
-# Compile the list of available consoles in a dictionary with the respective link
-def get_console_list():
-    lists = bs(requests.get(MAIN_LINK + "/console").content, 'html.parser').find_all("ul", class_="browseCategoryList-subList")
+# Compile the list of available game series or consoles in a dictionary with the respective link
+def get_list(type_of_list="series"):
+    lists = bs(requests.get(MAIN_LINK + "/{}".format(type_of_list)).content, 'html.parser').find_all("ul", class_="browseCategoryList-subList")
     return_value = {}
     for ul_tag in lists:
         for list_item in ul_tag.find_all("li"):

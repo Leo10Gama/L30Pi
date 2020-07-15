@@ -98,8 +98,8 @@ async def on_message(message):
         # Pig latin command
         elif command[:8] == command_list[4]:
             await message.channel.send(piglatin.to_piglatin(command[8:].strip()))
-        # Ninsheetmusic command
-        elif command[:13] == command_list[5]:
+        # Ninsheetmusic (NSM) command
+        elif command[:3] == command_list[5]:
             async def get_sheets(game, games, channel):
                 if game.lower().strip() in list(i.lower() for i in games.keys()):
                     songlist = {}
@@ -125,87 +125,49 @@ async def on_message(message):
                 else:
                     await channel.send("Game not found. Cancelling action")
             # Search by console
-            if command[13:].strip().lower() == "console":
-                consoles = nsm.get_console_list()
-                console_list = list(consoles.keys())
-                await message.channel.send("Which console would you like to see the sheets for? (Or type `list` to see all available consoles)")
-                want2exit = False
-                while not want2exit:
-                    console = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
-                    # List consoles to search from
-                    if console.content.lower().strip() == "list":
-                        embed = discord.Embed(title="Consoles")
-                        desc = ""
-                        for c in console_list:
-                            desc += c + "\n"
-                        if len(desc) < 2048:
-                            embed.description = desc
-                            await message.channel.send(embed=embed)
-                            await message.channel.send("Which of these would you like sheets for?")
-                        else:
-                            await message.channel.send("Which game would you like sheets for?")
-                    # A console has been selected
-                    elif console.content.lower().strip() in console_list:
-                        games = nsm.get_sheets_from_page(consoles[console.content.lower().strip()])
-                        embed = discord.Embed(title="Games")
-                        desc = ""
-                        for game in games.keys():
-                            desc += game.lower() + "\n"
-                        if len(desc) < 2048:
-                            embed.description = desc
-                            await message.channel.send(embed=embed)
-                            await message.channel.send("Which of these would you like sheets for?")
-                        else:
-                            await message.channel.send("Which game would you like sheets for?")
-                        # Figure out which game to see sheets from
-                        game = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
-                        await get_sheets(game.content, games, message.channel)
-                        want2exit = True
-                    # Unknown command
-                    else:
-                        await message.channel.send("Unknown command. Cancelling action")
-                        want2exit = True
-            # Search by series
+            if command[3:].strip().lower() == "console":
+                search_dict = nsm.get_list("console")
             else:
-                serieses = nsm.get_series_list()
-                series_list = list(serieses.keys())
-                await message.channel.send("Which series would you like to see the sheets for? (Or type `list` to see all available consoles)")
-                want2exit = False
-                while not want2exit:
-                    series = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
-                    # List series to search from
-                    if series.content.lower().strip() == "list":
-                        embed = discord.Embed(title="Series")
-                        desc = ""
-                        for s in series_list:
-                            desc += s + "\n"
-                        if len(desc) < 2048:
-                            embed.description = desc
-                            await message.channel.send(embed=embed)
-                            await message.channel.send("Which of these would you like sheets for?")
-                        else:
-                            await message.channel.send("Which game would you like sheets for?")
-                    # A series has been selected
-                    elif series.content.lower().strip() in series_list:
-                        games = nsm.get_sheets_from_page(serieses[series.content.lower().strip()])
-                        embed = discord.Embed(title="Games")
-                        desc = ""
-                        for game in games.keys():
-                            desc += game.lower() + "\n"
-                        if len(desc) < 2048:
-                            embed.description = desc
-                            await message.channel.send(embed=embed)
-                            await message.channel.send("Which of these would you like sheets for?")
-                        else:
-                            await message.channel.send("Which game would you like sheets for?")
-                        # Figure out which game to see sheets from
-                        game = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
-                        await get_sheets(game.content, games, message.channel)
-                        want2exit = True
-                    # Unknown command
+                search_dict = nsm.get_list()
+            search_list = list(search_dict.keys())
+            await message.channel.send("Which would you like to see the sheets for? (Or type `list` to see all available options)")
+            want2exit = False
+            while not want2exit:
+                search_item = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
+                search_item = search_item.content.lower().strip()
+                # List options to search from
+                if search_item == "list":
+                    embed = discord.Embed(title="Options")
+                    desc = ""
+                    for s in search_list:
+                        desc += s + "\n"
+                    if len(desc) < 2048:
+                        embed.description = desc
+                        await message.channel.send(embed=embed)
+                        await message.channel.send("Which of these would you like sheets for?")
                     else:
-                        await message.channel.send("Unknown command. Cancelling action")
-                        want2exit = True  
+                        await message.channel.send("Which game would you like sheets for?")
+                # An item has been selected
+                elif search_item in search_list:
+                    games = nsm.get_sheets_from_page(search_dict[search_item])
+                    embed = discord.Embed(title="Games")
+                    desc = ""
+                    for game in games.keys():
+                        desc += game.lower() + "\n"
+                    if len(desc) < 2048:
+                        embed.description = desc
+                        await message.channel.send(embed=embed)
+                        await message.channel.send("Which of these would you like sheets for?")
+                    else:
+                        await message.channel.send("Which game would you like sheets for?")
+                    # Figure out which game to see sheets from
+                    game = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
+                    await get_sheets(game.content, games, message.channel)
+                    want2exit = True
+                # Unknown command
+                else:
+                    await message.channel.send("Unknown command. Cancelling action")
+                    want2exit = True
         # Fibonacci command
         elif command[:9] == command_list[6]:
             await message.channel.send(str(fib.get_fib(int(command[9:].strip()))))
