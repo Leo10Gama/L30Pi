@@ -14,11 +14,17 @@ MAIN_SITE = "http://downloads.khinsider.com"
 # Returns an array of dictionaries, with keys for 'title' and 'link'
 def search_albums(search_term):
     search_term = search_term.replace(" ", "+")
-    results = bs(requests.get(MAIN_SITE + "/search?search={}".format(search_term)).content, 'html.parser').find("div", id="EchoTopic").find_all("a")
+    search_link = MAIN_SITE + "/search?search={}".format(search_term)
+    page = bs(requests.get(search_link).content, 'html.parser').find("div", id="EchoTopic")
+    results = page.find_all("a")
     list_of_albums = []
-    for a in results:
-        list_of_albums.append({"title": a.text, "link": a["href"]})
-    return list_of_albums
+    if page.find("table", id="songlist"):
+        list_of_albums.append({"title": page.find("h2").text, "link": search_link})
+        return list_of_albums
+    else:
+        for a in results:
+            list_of_albums.append({"title": a.text, "link": a["href"]})
+        return list_of_albums
 
 # Returns an Album object
 def get_album_by_link(link):

@@ -389,35 +389,47 @@ async def on_message(message):
                 await message.channel.send("Presenting... {}!".format(my_cat[0]), file=discord.File(my_cat[1], filename=my_cat[1]))
         # Soundtrack command
         elif command[:10] == command_list[12]:
+            async def send_album(_album):
+                embeds = []
+                for disk in _album.songlist:
+                    new_embed = discord.Embed(title=_album.title + " (Disk {})".format(str(disk[0].disk_number)), url=_album.link)
+                    try: new_embed.set_thumbnail(url=_album.art)
+                    except: pass
+                    for i in range(0, len(disk)):
+                        if i % 25 == 0 and i != 0:
+                            embeds.append(new_embed)
+                            new_embed = discord.Embed(title=_album.title + " (Disk {})".format(str(disk[0].disk_number)), url=_album.link)
+                            try: new_embed.set_thumbnail(url=_album.art)
+                            except: pass
+                        new_embed.add_field(name=str(disk[i].track_number) + " - " + disk[i].title, value=disk[i].link)
+                    else:
+                        embeds.append(new_embed)
+                return embeds
             search_term = command[10:].strip()
             message_to_send = ""
             albums = khi.search_albums(search_term)
-            for i in range(0, len(albums)):
-                message_to_send = message_to_send + "`<{}> {}`\n".format(i, albums[i]["title"])
-            await message.channel.send(message_to_send + "Enter the number of the album you'd like to see")
-            msg = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
-            msg = msg.content
-            if msg is None:
-                await message.channel.send("Timeout reached. Cancelling request...")
-            elif msg in map(lambda x: str(x), range(0, len(albums))):
-                album = khi.get_album_by_link(albums[int(msg)]["link"])
+            flag = True
+            if len(albums) == 1:
+                album = khi.get_album_by_link(albums[0]["link"])
+            elif albums == []:
+                await message.channel.send("No results found. Try being a little less specific?")
+                flag = False
+            else:
+                for i in range(0, min(20, len(albums))):
+                    message_to_send = message_to_send + "`<{}> {}`\n".format(i, albums[i]["title"])
+                await message.channel.send(message_to_send + "Enter the number of the album you'd like to see")
+                msg = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
+                msg = msg.content
+                if msg is None:
+                    await message.channel.send("Timeout reached. Cancelling request...")
+                elif msg in map(lambda x: str(x), range(0, len(albums))):
+                    album = khi.get_album_by_link(albums[int(msg)]["link"])
+                else:
+                    await message.channel.send("Invalid range. Cancelling request...")
+                    flag = False
+            if flag:
                 embeds = []
                 total_songs = 0
-                async def send_album(_album):
-                    for disk in _album.songlist:
-                        new_embed = discord.Embed(title=_album.title + " (Disk {})".format(str(disk[0].disk_number)), url=_album.link)
-                        try: new_embed.set_thumbnail(url=_album.art)
-                        except: pass
-                        for i in range(0, len(disk)):
-                            if i % 25 == 0 and i != 0:
-                                embeds.append(new_embed)
-                                new_embed = discord.Embed(title=_album.title + " (Disk {})".format(str(disk[0].disk_number)), url=_album.link)
-                                try: new_embed.set_thumbnail(url=_album.art)
-                                except: pass
-                            new_embed.add_field(name=str(disk[i].track_number) + " - " + disk[i].title, value=disk[i].link)
-                        else:
-                            embeds.append(new_embed)
-                    return embeds
                 for disk in album.songlist:
                     total_songs += len(disk)
                 if total_songs > 50:
@@ -435,8 +447,6 @@ async def on_message(message):
                     embeds = await send_album(album)
                     for embed in embeds:
                         await message.channel.send(embed=embed)
-            else:
-                await message.channel.send("Invalid range. Cancelling request...")
         #TODO: Add more commands here
         else:
             await message.channel.send("Command not found. Try typing `p.help` to see a list of all commands")
