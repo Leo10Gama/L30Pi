@@ -1,4 +1,5 @@
 import os
+import re
 import discord
 import piglatin
 import ninsheetmusic as nsm
@@ -99,31 +100,7 @@ async def on_message(message):
         elif command[:8] == command_list[4]:
             await message.channel.send(piglatin.to_piglatin(command[8:].strip()))
         # Ninsheetmusic (NSM) command
-        elif command[:3] == command_list[5]:
-            async def get_sheets(game, games, channel):
-                if game.lower().strip() in list(i.lower() for i in games.keys()):
-                    songlist = {}
-                    game_title = ""
-                    for i in games.keys():
-                        if game.lower().strip() == i.lower():
-                            songlist = games[i]
-                            game_title = i
-                            break
-                    embed = discord.Embed(title=game_title)
-                    char_sum = len(game_title)
-                    for song in songlist:
-                        embed.add_field(name=song["title"], value="Arranged by " + song["arranger"] + "\n" + song["link"], inline=True)
-                        char_sum += len(song["title"]) + len(song["arranger"]) + len(song["link"])
-                    # This chunk is to make sure the embed character limit is not exceeded
-                    if char_sum <= 6000:
-                        await channel.send(embed=embed)
-                    else:
-                        async with channel.typing():
-                            await channel.send("**" + game_title + "**")
-                            for song in songlist:
-                                await channel.send(song["title"] + " (Arranged by " + song["arranger"] + "): " + song["link"])
-                else:
-                    await channel.send("Game not found. Cancelling action")
+        elif command[:3] == command_list[5]:                
             # Search by console
             if command[3:].strip().lower() == "console":
                 search_dict = nsm.get_list("console")
@@ -153,7 +130,7 @@ async def on_message(message):
                     embed = discord.Embed(title="Games")
                     desc = ""
                     for game in games.keys():
-                        desc += game.lower() + "\n"
+                        desc += game.lower() + " ({} sheets)\n".format(len(games[game]))
                     if len(desc) < 2048:
                         embed.description = desc
                         await message.channel.send(embed=embed)
@@ -162,7 +139,29 @@ async def on_message(message):
                         await message.channel.send("Which game would you like sheets for?")
                     # Figure out which game to see sheets from
                     game = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
-                    await get_sheets(game.content, games, message.channel)
+                    game = game.content.lower().strip()
+                    if game in list(i.lower() for i in games.keys()):
+                        songlist = {}
+                        game_title = ""
+                        for i in games.keys():
+                            if game == i.lower():
+                                songlist = games[i]
+                                game_title = i
+                                break
+                        # This chunk is to make sure the embed character limit is not exceeded
+                        embeds = []
+                        new_embed = discord.Embed(title=game_title)
+                        for i in range(0, len(songlist)):
+                            if i % 25 == 0 and i != 0:
+                                embeds.append(new_embed)
+                                new_embed = discord.Embed(title=game_title)
+                            new_embed.add_field(name=songlist[i].title, value="Arranged by *{}*\n{}".format(songlist[i].arranger, songlist[i].links["pdf"]))
+                        else:
+                            embeds.append(new_embed)
+                        for embed in embeds:
+                            await message.channel.send(embed=embed)
+                    else:
+                        await message.channel.send("Game not found. Cancelling action")
                     want2exit = True
                 # Unknown command
                 else:
