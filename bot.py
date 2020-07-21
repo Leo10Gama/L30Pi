@@ -1,5 +1,4 @@
 import os
-import re
 import discord
 import piglatin
 import ninsheetmusic as nsm
@@ -10,6 +9,7 @@ import trivia
 import coin as numista
 import cat
 import vgmost as khi
+import cards
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -29,7 +29,8 @@ command_help = {
     "percent": "`p.percent [number]/[number]`\nGet the percentage of a given fraction",
     "coin": "`p.coin`\nSearch for a coin based on its country, face value, year, and description\n`p.coin random (modifier)`\nFind and display a random coin (note: may sometimes fail if I find a bad link, apologies in advance)\nNote that modifiers include countries or years",
     "cat": "`p.cat`\nShow a picture of a cat!\n`p.cat list`\nShow a list of cats you can see\n`p.cat [cat name]`\nShow one of the cats in the list",
-    "soundtrack": "`p.soundtrack [game]`\nRetrieve the soundtrack of a given video game"
+    "soundtrack": "`p.soundtrack [game]`\nRetrieve the soundtrack of a given video game",
+    "blackjack": "`p.blackjack`\nStart a game of blackjack against me"
 }
 command_list = list(command_help.keys())
 
@@ -408,6 +409,113 @@ async def on_message(message):
                     embeds = await send_album(album)
                     for embed in embeds:
                         await message.channel.send(embed=embed)
+        # Blackjack command
+        elif command[:9] == command_list[13]:
+            # Take either player or computer hand and write out its contents in a specific format
+            def display_hand(hand):
+                return_value = ""
+                for card in hand:
+                    return_value = return_value + "`{}` ".format(card)
+                return return_value
+            def get_hand_value(hand):
+                high_val_aces = 0
+                total_value = 0
+                for card in hand:
+                    value = card[:-1]
+                    if value == "A":
+                        high_val_aces += 1
+                        total_value += 11
+                    elif value in ["J", "Q", "K"]:
+                        total_value += 10
+                    else:
+                        total_value += int(value)
+                if total_value > 21:
+                    for i in range(0, high_val_aces):
+                        total_value -= 10
+                        if total_value <= 21:
+                            break
+                return total_value
+            deck = cards.get_shuffled_deck()
+            player_hand = [deck[0], deck[1]]
+            computer_hand = [deck[2], deck[3]]
+            deck_index = 4      # Deck index will point to the next value to return
+            # Player's turn
+            player_turn = True
+            await message.channel.send("Your cards:\n{}\nWhat will you do?\n[`Hit`] [`Stand`] [`Cancel`]".format(display_hand(player_hand)))
+            while player_turn:
+                response = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=30)
+                try: response = response.content.lower().strip()
+                except: 
+                    await message.channel.send("Timeout reached. Cancelling game...")
+                    break
+                # Player wants to hit
+                if response in ["hit", "h"]:
+                    player_hand.append(deck[deck_index])
+                    deck_index += 1
+                    await message.channel.send("Your cards:\n{}".format(display_hand(player_hand)))
+                    if get_hand_value(player_hand) > 21: 
+                        await message.channel.send("Bust!")
+                        player_turn = False
+                    else:
+                        await message.channel.send("What will you do?\n[`Hit`] [`Stand`] [`Cancel`]")
+                # Player wants to stand
+                elif response in ["stand", "s"]:
+                    await message.channel.send("You decide to stand")
+                    player_turn = False
+                # Player wants to cancel game
+                elif response in ["cancel", "c"]:
+                    await message.channel.send("Cancelling game...")
+                    break
+                # Invalid response
+                else:
+                    await message.channel.send("Invalid response. Please respond with `Hit`, `Stand`, or `Cancel`")
+            # Computer turn
+            else:
+                computer_turn = True
+                computer_reply = ["My cards are:\n{}".format(display_hand(computer_hand))]
+                player_score = get_hand_value(player_hand)
+                computer_score = get_hand_value(computer_hand)
+                while computer_turn:
+                    # Computer always stands if player busts
+                    if player_score > 21:
+                        computer_reply.append("I decide to stand")
+                        computer_turn = False
+                    # Computer always hits if it's losing
+                    elif computer_score < player_score:
+                        computer_reply.append("I decide to hit")
+                        computer_hand.append(deck[deck_index])
+                        deck_index += 1
+                        computer_reply.append("My cards:\n{}".format(display_hand(computer_hand)))
+                        if get_hand_value(computer_hand) > 21:
+                            computer_reply.append("Bust!")
+                            computer_turn = False
+                    # Stand if the computer is tied or will win
+                    else:
+                        computer_reply.append("I decide to stand")
+                        computer_turn = False
+                # See who won
+                else:
+                    computer_score = get_hand_value(computer_hand)
+                    await message.channel.send("\n".join(computer_reply))
+                    game_outcome = ""
+                    if player_score > 21 and computer_score > 21:
+                        game_outcome = "draw"
+                    elif player_score > 21:
+                        game_outcome = "lose"
+                    elif computer_score > 21:
+                        game_outcome = "win"
+                    elif computer_score > player_score:
+                        game_outcome = "lose"
+                    elif player_score > computer_score:
+                        game_outcome = "win"
+                    else:
+                        game_outcome = "draw"
+                    if game_outcome == "win":
+                        await message.channel.send("You win! Congratulations!!")
+                    elif game_outcome == "lose":
+                        await message.channel.send("You lose! Better luck next time")
+                    else:
+                        await message.channel.send("It's a draw!")
         #TODO: Add more commands here
         else:
             await message.channel.send("Command not found. Try typing `p.help` to see a list of all commands")
