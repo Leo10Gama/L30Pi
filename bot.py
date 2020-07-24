@@ -101,73 +101,82 @@ async def on_message(message):
         elif command[:8] == command_list[4]:
             await message.channel.send(piglatin.to_piglatin(command[8:].strip()))
         # Ninsheetmusic (NSM) command
-        elif command[:3] == command_list[5]:                
+        elif command[:3] == command_list[5]:
+            search_sheets = True
             # Search by console
             if command[3:].strip().lower() == "console":
                 search_dict = nsm.get_list("console")
+            # Check update
+            elif command[3:].strip().lower() == "update":
+                update = nsm.get_update()
+                embed = discord.Embed(title=update["title"], description=update["text"])
+                await message.channel.send(embed=embed)
+                search_sheets = False
+            # Search by series
             else:
                 search_dict = nsm.get_list()
-            search_list = list(search_dict.keys())
-            await message.channel.send("Which would you like to see the sheets for? (Or type `list` to see all available options)")
-            want2exit = False
-            while not want2exit:
-                search_item = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
-                search_item = search_item.content.lower().strip()
-                # List options to search from
-                if search_item == "list":
-                    embed = discord.Embed(title="Options")
-                    desc = ""
-                    for s in search_list:
-                        desc += s + "\n"
-                    if len(desc) < 2048:
-                        embed.description = desc
-                        await message.channel.send(embed=embed)
-                        await message.channel.send("Which of these would you like sheets for?")
-                    else:
-                        await message.channel.send("Which game would you like sheets for?")
-                # An item has been selected
-                elif search_item in search_list:
-                    games = nsm.get_sheets_from_page(search_dict[search_item])
-                    embed = discord.Embed(title="Games")
-                    desc = ""
-                    for game in games.keys():
-                        desc += game.lower() + " ({} sheets)\n".format(len(games[game]))
-                    if len(desc) < 2048:
-                        embed.description = desc
-                        await message.channel.send(embed=embed)
-                        await message.channel.send("Which of these would you like sheets for?")
-                    else:
-                        await message.channel.send("Which game would you like sheets for?")
-                    # Figure out which game to see sheets from
-                    game = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
-                    game = game.content.lower().strip()
-                    if game in list(i.lower() for i in games.keys()):
-                        songlist = {}
-                        game_title = ""
-                        for i in games.keys():
-                            if game == i.lower():
-                                songlist = games[i]
-                                game_title = i
-                                break
-                        # This chunk is to make sure the embed character limit is not exceeded
-                        embeds = []
-                        new_embed = discord.Embed(title=game_title)
-                        for i in range(0, len(songlist)):
-                            if i % 25 == 0 and i != 0:
-                                embeds.append(new_embed)
-                                new_embed = discord.Embed(title=game_title)
-                            new_embed.add_field(name=songlist[i].title, value="Arranged by *{}*\n{}".format(songlist[i].arranger, songlist[i].links["pdf"]))
-                        else:
-                            embeds.append(new_embed)
-                        for embed in embeds:
+            if search_sheets:
+                search_list = list(search_dict.keys())
+                await message.channel.send("Which would you like to see the sheets for? (Or type `list` to see all available options)")
+                want2exit = False
+                while not want2exit:
+                    search_item = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
+                    search_item = search_item.content.lower().strip()
+                    # List options to search from
+                    if search_item == "list":
+                        embed = discord.Embed(title="Options")
+                        desc = ""
+                        for s in search_list:
+                            desc += s + "\n"
+                        if len(desc) < 2048:
+                            embed.description = desc
                             await message.channel.send(embed=embed)
+                            await message.channel.send("Which of these would you like sheets for?")
+                        else:
+                            await message.channel.send("Which game would you like sheets for?")
+                    # An item has been selected
+                    elif search_item in search_list:
+                        games = nsm.get_sheets_from_page(search_dict[search_item])
+                        embed = discord.Embed(title="Games")
+                        desc = ""
+                        for game in games.keys():
+                            desc += game.lower() + " ({} sheets)\n".format(len(games[game]))
+                        if len(desc) < 2048:
+                            embed.description = desc
+                            await message.channel.send(embed=embed)
+                            await message.channel.send("Which of these would you like sheets for?")
+                        else:
+                            await message.channel.send("Which game would you like sheets for?")
+                        # Figure out which game to see sheets from
+                        game = await client.wait_for("message", check=lambda m : m.author == message.author and m.channel == message.channel, timeout=60)
+                        game = game.content.lower().strip()
+                        if game in list(i.lower() for i in games.keys()):
+                            songlist = {}
+                            game_title = ""
+                            for i in games.keys():
+                                if game == i.lower():
+                                    songlist = games[i]
+                                    game_title = i
+                                    break
+                            # This chunk is to make sure the embed character limit is not exceeded
+                            embeds = []
+                            new_embed = discord.Embed(title=game_title)
+                            for i in range(0, len(songlist)):
+                                if i % 25 == 0 and i != 0:
+                                    embeds.append(new_embed)
+                                    new_embed = discord.Embed(title=game_title)
+                                new_embed.add_field(name=songlist[i].title, value="Arranged by *{}*\n{}".format(songlist[i].arranger, songlist[i].links["pdf"]))
+                            else:
+                                embeds.append(new_embed)
+                            for embed in embeds:
+                                await message.channel.send(embed=embed)
+                        else:
+                            await message.channel.send("Game not found. Cancelling action")
+                        want2exit = True
+                    # Unknown command
                     else:
-                        await message.channel.send("Game not found. Cancelling action")
-                    want2exit = True
-                # Unknown command
-                else:
-                    await message.channel.send("Unknown command. Cancelling action")
-                    want2exit = True
+                        await message.channel.send("Unknown command. Cancelling action")
+                        want2exit = True
         # Fibonacci command
         elif command[:9] == command_list[6]:
             await message.channel.send(str(fib.get_fib(int(command[9:].strip()))))

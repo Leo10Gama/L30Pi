@@ -21,8 +21,7 @@ def get_list(type_of_list="series"):
             return_value[list_item.get_text().lower().replace("é","e")] = list_item.find("a")["href"]
     return return_value
 
-# Returns a dictionary object, where each entry contains an array of other dictionaries
-# These 'subdictionaries' contain song title, arranger, and a download link to a pdf of the sheet music
+# Returns a dictionary object, where each entry contains an array of song objects
 def get_sheets_from_page(link):
     sheets = {}
     games = bs(requests.get(link).content, 'html.parser').find_all("div", class_="game")
@@ -35,3 +34,16 @@ def get_sheets_from_page(link):
             sheets[game.find("h3", class_="heading-text").get_text().replace("\n","").replace("é","e")] = songs
     else:
         return sheets
+
+# Returns the most recent NSM update information, including title, text, and new sheets
+def get_update():
+    full_update_panel = bs(requests.get("https://www.ninsheetmusic.org").content, 'html.parser').find("article")
+    update_title = full_update_panel.find("h3").text
+    new_sheets_div = full_update_panel.find("div", attrs={"align": "center"})
+    if bool(new_sheets_div):
+        # TODO: List and get the actual sheets
+        update_text = full_update_panel.find("div", class_="article-body").get_text(separator="\n").replace(new_sheets_div.get_text("\n"), "").strip('\n\t')
+    else:
+        update_text = full_update_panel.find("div", class_="article-body").get_text(separator="\n").strip('\n\t')
+    return {"title": update_title, "text": update_text}
+    
