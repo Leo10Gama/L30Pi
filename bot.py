@@ -110,6 +110,8 @@ async def on_message(message):
             elif command[3:].strip().lower() == "update":
                 update = nsm.get_update()
                 embed = discord.Embed(title=update["title"], description=update["text"])
+                for song in update["songs"]:
+                    embed.add_field(name=song.title + " (from {})".format(song.game), value="Arranged by *{}*\n{}".format(song.arranger, song.links["pdf"]))
                 await message.channel.send(embed=embed)
                 search_sheets = False
             # Search by series
