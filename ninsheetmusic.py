@@ -1,5 +1,7 @@
 import requests
+from bs4 import NavigableString 
 from bs4 import BeautifulSoup as bs
+import re
 
 MAIN_LINK = "https://www.ninsheetmusic.org/browse"
 
@@ -41,8 +43,31 @@ def get_update():
     update_title = full_update_panel.find("h3").text
     new_sheets_div = full_update_panel.find("div", attrs={"align": "center"})
     if bool(new_sheets_div):
-        # TODO: List and get the actual sheets
         update_text = full_update_panel.find("div", class_="article-body").get_text(separator="\n").replace(new_sheets_div.get_text("\n"), "").strip('\n\t')
+        # Get the actual sheets to search for
+        # search_consoles is a dictionary, where console names are linked to dictionaries of games
+        # where each game name is linked to an array of songs
+        search_consoles = {}
+        search_games = {}
+        current_console = ""
+        current_game = ""
+        for tag in new_sheets_div.children:
+            if tag.name == "em" or tag.name == "br":
+                continue
+            elif isinstance(tag, NavigableString):
+                current_song = re.search(r'\"(.*)\"', tag.string).group()[1:-1]
+                if current_game not in search_games:
+                    search_games[current_game] = []
+                search_games[current_game].append(current_song)
+            elif tag.name == "strong":
+                if current_console and current_game:
+                    if current_console not in search_consoles:
+                        search_consoles[current_console] = []
+                    search_consoles[current_console].append(search_games)
+                current_console = re.search(r'\[(.*)\]', tag.text).group()[1:-1]
+                current_game = tag.text.replace(re.search(r'\[(.*)\]', tag.text).group(), "").strip()
+                search_games = {}
+        print(search_consoles)
     else:
         update_text = full_update_panel.find("div", class_="article-body").get_text(separator="\n").strip('\n\t')
     return {"title": update_title, "text": update_text}
