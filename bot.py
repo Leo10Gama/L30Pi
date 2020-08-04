@@ -22,7 +22,7 @@ command_help = {
     "palindrome": "`p.palindrome [word]`\nFigure out if a word is spelt the same forwards and backwards",
     "math": "`p.math [number] [operation] [number]`\nPerform a mathematical operation using either {+, -, *, /, %, \\}",
     "piglatin": "`p.piglatin [phrase]`\nConvert a phrase or expression into pig latin",
-    "nsm": "Searches for video game sheet music on the site https://www.ninsheetmusic.org\n`p.nsm`\n`p.nsm series`\nFind video game sheet music based on the game series (default)\n`p.nsm console`\nFind video game sheet music based on the console that game was on",
+    "nsm": "Searches for video game sheet music on the site https://www.ninsheetmusic.org\n`p.nsm`\n`p.nsm series`\nFind video game sheet music based on the game series (default)\n`p.nsm console`\nFind video game sheet music based on the console that game was on\n`p.nsm update`\nRetrieve the most recently added sheets from the site",
     "fibonacci": "`p.fibonacci [integer]`\nGet a term of the fibonacci sequence",
     "flag": "A fun game! Guess what country the flag belongs to in 30 seconds (or 3 tries)\n`p.flag`\nStart the game with country flags from around the world\n`p.flag america`\nStart the game with flags from the states of USA\n`p.flag canada`\nStart the game with flags of the provinces and territories of Canada\n`p.flag arms`\nStart the game with country's coats of arms instead of flags",
     "smashu": "`p.smashu [character]`\nSee the hitboxes of a character from Super Smash Bros. Ultimate",
@@ -108,11 +108,15 @@ async def on_message(message):
                 search_dict = nsm.get_list("console")
             # Check update
             elif command[3:].strip().lower() == "update":
-                update = nsm.get_update()
-                embed = discord.Embed(title=update["title"], description=update["text"])
-                for song in update["songs"]:
-                    embed.add_field(name=song.title + " (from {})".format(song.game), value="Arranged by *{}*\n{}".format(song.arranger, song.links["pdf"]))
-                await message.channel.send(embed=embed)
+                await message.channel.send("Getting update information (this may take a while)...")
+                try:
+                    update = nsm.get_update()
+                    embed = discord.Embed(title=update["title"], description=update["text"])
+                    for song in update["songs"]:
+                        embed.add_field(name=song.title + " (from {})".format(song.game), value="Arranged by *{}*\n{}".format(song.arranger, song.links["pdf"]))
+                    await message.channel.send(embed=embed)
+                except:
+                    await message.channel.send("Something went wrong, but you can see the most recent update for yourself at https://www.ninsheetmusic.org")
                 search_sheets = False
             # Search by series
             else:
